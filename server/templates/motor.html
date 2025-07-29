@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>モーター操作</title>
+    <style>
+        button {
+            font-size: 20px;
+            margin: 5px;
+            padding: 10px 20px;
+            width: 120px;
+        }
+        #status {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>モーター操作パネル</h1>
+    <button onclick="sendCommand('forward')">前進</button><br>
+    <button onclick="sendCommand('left')">左旋回</button>
+    <button onclick="sendCommand('stop')">停止</button>
+    <button onclick="sendCommand('right')">右旋回</button><br>
+    <button onclick="sendCommand('backward')">後退</button>
+
+    <p id="status">状態: 待機中</p>
+
+    <script>
+        function sendCommand(command) {
+            fetch('/motor/move', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({command: command})
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('status').textContent = '状態: ' + data.result;
+            })
+            .catch(() => {
+                document.getElementById('status').textContent = '状態: エラーが発生しました';
+            });
+        }
+    </script>
+</body>
+</html>

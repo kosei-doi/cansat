@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head><title>ニクロム線テスト</title></head>
+<body>
+    <h1>ニクロム線通電テスト</h1>
+    <button onclick="startNichrome()">5秒間通電開始</button>
+    <p id="status"></p>
+
+    <script>
+    function startNichrome() {
+        fetch('/nichrome/start', {method: 'POST'})
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('status').textContent = data.result;
+        })
+        .catch(() => {
+            document.getElementById('status').textContent = 'エラーが発生しました';
+        });
+    }
+    </script>
+</body>
+</html>

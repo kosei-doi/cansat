@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>センサーステータス</title>
+    <script>
+        function fetchStatus() {
+            fetch('/status/data')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('acceleration').textContent = data.acceleration.map(n => n.toFixed(2)).join(', ');
+                    document.getElementById('pressure').textContent = data.pressure.toFixed(2) + ' hPa';
+                    document.getElementById('landing').textContent = data.landing ? '着地しました' : '飛行中';
+                });
+        }
+
+        function resetLanding() {
+            fetch('/status/reset', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.result);
+                fetchStatus();
+            });
+        }
+
+        setInterval(fetchStatus, 1000);
+        window.onload = fetchStatus;
+    </script>
+</head>
+<body>
+    <h1>センサーステータス</h1>
+    <p><strong>加速度:</strong> <span id="acceleration">---</span></p>
+    <p><strong>気圧:</strong> <span id="pressure">---</span></p>
+    <p><strong>着地判定:</strong> <span id="landing">---</span></p>
+
+    <button onclick="resetLanding()">着地判定をリセット</button>
+</body>
+</html>

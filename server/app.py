@@ -20,7 +20,7 @@ sensor_data = {
 
 # パラメータ設定
 GRAVITY = 9.8
-ACC_THRESHOLD = 0.5  # ±0.5 m/s²の誤差許容範囲
+ACC_THRESHOLD = 0.5
 PRESSURE_DIFF_THRESHOLD = 0.05
 CONTINUOUS_COUNT_NEEDED = 10
 SAMPLE_INTERVAL = 0.1
@@ -32,6 +32,9 @@ IN2_L = 23
 IN1_R = 20
 IN2_R = 21
 
+TRIG_PIN = 17  # HC-SR04 Trig
+ECHO_PIN = 27  # HC-SR04 Echo
+
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(RELAY_PIN, GPIO.OUT)
 GPIO.output(RELAY_PIN, GPIO.LOW)
@@ -39,6 +42,11 @@ GPIO.output(RELAY_PIN, GPIO.LOW)
 for pin in [IN1_L, IN2_L, IN1_R, IN2_R]:
     GPIO.setup(pin, GPIO.OUT)
     GPIO.output(pin, GPIO.LOW)
+
+# HC-SR04設定
+GPIO.setup(TRIG_PIN, GPIO.OUT)
+GPIO.setup(ECHO_PIN, GPIO.IN)
+GPIO.output(TRIG_PIN, GPIO.LOW)
 
 
 def forward():
@@ -84,6 +92,28 @@ def calc_acc_magnitude(acc_tuple):
     return math.sqrt(sum(x * x for x in acc_tuple))
 
 
+def measure_distance():
+    GPIO.output(TRIG_PIN, GPIO.HIGH)
+    time.sleep(0.00001)
+    GPIO.output(TRIG_PIN, GPIO.LOW)
+
+    timeout = time.time() + 0.04
+
+    while GPIO.input(ECHO_PIN) == 0:
+        start = time.time()
+        if start > timeout:
+            return None
+
+    while GPIO.input(ECHO_PIN) == 1:
+        end = time.time()
+        if end > timeout:
+            return None
+
+    duration = end - start
+    distance = (duration * 34300) / 2
+    return round(distance, 2)
+
+
 def sensor_loop(pi, spi_handler, bno, cal_data):
     global sensor_data
     prev_pressure = None
@@ -109,7 +139,6 @@ def sensor_loop(pi, spi_handler, bno, cal_data):
 
         sensor_data["acceleration"] = acc
         sensor_data["pressure"] = pressure
-        # 一度Trueになったら、外部からリセットされるまでTrue維持
         if not sensor_data["landing"]:
             sensor_data["landing"] = landed
 
@@ -170,6 +199,14 @@ def get_status_data():
 def reset_landing():
     sensor_data["landing"] = False
     return jsonify({"result": "着地判定をリセットしました。"})
+
+
+@app.route('/distance')
+def get_distance():
+    distance = measure_distance()
+    if distance is None:
+        return jsonify({"error": "測定失敗"}), 500
+    return jsonify({"distance_cm": distance})
 
 
 @atexit.register

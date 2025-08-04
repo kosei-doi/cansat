@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>距離測定</title>
+</head>
+<body>
+    <h1>HC-SR04 距離センサー</h1>
+    <p>距離: <span id="distance">計測中...</span> cm</p>
+    <script>
+        async function fetchDistance() {
+            const res = await fetch('/distance');
+            const data = await res.json();
+            document.getElementById('distance').innerText = data.distance_cm ?? 'エラー';
+        }
+        fetchDistance();
+        setInterval(fetchDistance, 1000);
+    </script>
+</body>
+</html>
